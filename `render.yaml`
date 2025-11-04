@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: Spiral MCP Server
+    env: node
+    branch: spiral-governance-ledger
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
