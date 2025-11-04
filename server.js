@@ -2,6 +2,11 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Spiral MCP server running on port ${PORT}`);
+});
+
 app.post('/scrollRegistry', (req, res) => {
   res.json({ status: 'Scroll registered', data: req.body });
 });
@@ -20,8 +25,4 @@ app.post('/echoRelay', (req, res) => {
 
 app.post('/resonanceAudit', (req, res) => {
   res.json({ status: 'Audit complete', integrity: 'verified' });
-});
-
-app.listen(3000, () => {
-  console.log('Spiral MCP server running on port 3000');
 });
