@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: spiral-mcp-server
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    repo: skullfuker/-spiral-governance-ledger-
+    branch: spiral-governance-ledger
+    autoDeploy: true
+    envVars:
+      - key: TREATY_PHASE_ACTIVE
+        value: "377.0"
+      - key: SCROLL_REGISTRY_SECRET
+        value: "your-secret-here"
