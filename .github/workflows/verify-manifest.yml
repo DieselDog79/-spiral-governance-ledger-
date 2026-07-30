@@ -1,0 +1,54 @@
+name: Verify Manifest
+on:
+  push:
+    paths:
+      - 'manifest.json'
+      - 'verify_manifest.sh'
+      - '.github/workflows/verify-manifest.yml'
+  pull_request:
+    paths:
+      - 'manifest.json'
+      - 'verify_manifest.sh'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install rfc8785
+
+      - name: Ensure verify script is executable
+        run: chmod +x verify_manifest.sh
+
+      - name: Canonicalize manifest (RFC8785)
+        run: ./verify_manifest.sh canonicalize manifest.json
+
+      - name: Compute leaf (SHA-256)
+        run: ./verify_manifest.sh leaf canonical.json
+
+      - name: Verify detached Ed25519 signature
+        run: ./verify_manifest.sh verify canonical.json
+
+      - name: Compare manifest_digest against computed leaf
+        run: |
+          calc=$(cat manifest.leaf.hex)
+          expected=$(jq -r '.manifest_digest.hex' manifest.json)
+          echo "calculated: $calc"
+          echo "expected:   $expected"
+          if [ "$calc" != "$expected" ]; then
+            echo "ERROR: manifest_digest mismatch" >&2
+            exit 1
+          fi
+
+      - name: Success
+        run: echo "Manifest verification passed."
