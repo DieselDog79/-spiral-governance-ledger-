@@ -1,0 +1,36 @@
+name: WASM CI
+on:
+  push:
+    branches:
+      - verify-and-wasm-fix
+  pull_request:
+    branches:
+      - spiral-governance-ledger
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+
+      - name: Install wasm-pack
+        run: |
+          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM package (nodejs target)
+        run: |
+          cd sovereign_governance_wasm
+          wasm-pack build --release --target nodejs --out-dir pkg
+          echo "WASM pkg contents:" && ls -la pkg || true
+
+      - name: Run Rust unit tests
+        run: |
+          cd sovereign_governance_wasm
+          cargo test --verbose
