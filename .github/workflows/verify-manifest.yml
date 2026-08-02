@@ -1,3 +1,6 @@
+permissions:
+  contents: read
+
 name: Verify Manifest
 on:
   push:
@@ -16,6 +19,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Pre-check required artifacts (warning only)
         run: |
@@ -32,10 +38,18 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') || 'rfc8785' }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies (pinned)
         run: |
           python -m pip install --upgrade pip
-          pip install rfc8785
+          python -m pip install rfc8785 --no-cache-dir
 
       - name: Ensure verify script is executable
         run: chmod +x verify_manifest.sh
@@ -45,6 +59,14 @@ jobs:
 
       - name: Compute leaf (SHA-256)
         run: ./verify_manifest.sh leaf canonical.json
+
+      - name: Upload verification artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifest-verification
+          path: |
+            canonical.json
+            manifest.leaf.hex
 
       - name: Verify detached Ed25519 signature (if present)
         run: |
