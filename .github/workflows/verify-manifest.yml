@@ -17,6 +17,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Pre-check required artifacts
+        run: |
+          echo "Checking for pubkey.pem and manifest.sig..."
+          if [ ! -f pubkey.pem ] || [ ! -f manifest.sig ]; then
+            echo "ERROR: pubkey.pem and/or manifest.sig are missing from the repository.\nEnsure pubkey.pem and manifest.sig are present in the branch or update the workflow to fetch them from a secure source." >&2
+            ls -la
+            exit 2
+          fi
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
