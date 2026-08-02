@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
 // =====================================================================
-// DATA TYPES & DTOs
+// DATA TYPES & DTOS
 // =====================================================================
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -147,7 +147,9 @@ impl GovernanceMicrokernel {
     }
 
     /// Fast evaluation entrypoint accepting JSON strings from JS/Host environment.
-    pub fn evaluate(&self, node_json: &str, telemetry_json: &str) -> Result<String, JsValue> {
+    /// Returns a JsValue (JS object) for easier interop with JS consumers.
+    #[wasm_bindgen]
+    pub fn evaluate(&self, node_json: &str, telemetry_json: &str) -> Result<JsValue, JsValue> {
         let node: NodeState = serde_json::from_str(node_json)
             .map_err(|e| JsValue::from_str(&format!("Invalid NodeState JSON: {}", e)))?;
 
@@ -172,7 +174,7 @@ impl GovernanceMicrokernel {
             node_id: node.node_id,
         };
 
-        serde_json::to_string(&outcome)
+        JsValue::from_serde(&outcome)
             .map_err(|e| JsValue::from_str(&format!("Serialization Error: {}", e)))
     }
 }
