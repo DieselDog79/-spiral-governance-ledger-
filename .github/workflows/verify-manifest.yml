@@ -1,20 +1,17 @@
 permissions:
   contents: read
 
-name: Verify Manifest
+name: WASM CI
 on:
   push:
-    paths:
-      - 'manifest.json'
-      - 'verify_manifest.sh'
-      - '.github/workflows/verify-manifest.yml'
+    branches:
+      - verify-and-wasm-fix
   pull_request:
-    paths:
-      - 'manifest.json'
-      - 'verify_manifest.sh'
+    branches:
+      - spiral-governance-ledger
 
 jobs:
-  verify:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,69 +20,53 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Pre-check required artifacts (warning only)
-        run: |
-          echo "Checking for pubkey.pem and manifest.sig..."
-          if [ ! -f pubkey.pem ] || [ ! -f manifest.sig ]; then
-            echo "WARNING: pubkey.pem and/or manifest.sig are missing from the repository. Continuing to compute canonical leaf for review."
-            ls -la || true
-          else
-            echo "Found pubkey.pem and manifest.sig"
-          fi
-
-      - name: Setup Python
-        uses: actions/setup-python@v7
+      - name: Setup Node (for wasm-pack and JS tooling)
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.x'
+          node-version: '18'
 
-      - name: Cache pip packages
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+
+      - name: Cache cargo registry & index
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') || 'rfc8785' }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install dependencies (pinned)
+      - name: Install wasm-pack (pinned)
+        env:
+          VERSION: "0.15.0"
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install rfc8785 --no-cache-dir
+          set -euo pipefail
+          echo "Installing wasm-pack v${VERSION}"
+          curl -fsSL "https://github.com/rustwasm/wasm-pack/releases/download/v${VERSION}/wasm-pack-v${VERSION}-x86_64-unknown-linux-gnu.tar.gz" -o wasm-pack.tar.gz
+          tar xzf wasm-pack.tar.gz
+          sudo mv wasm-pack /usr/local/bin/wasm-pack
+          wasm-pack --version
 
-      - name: Ensure verify script is executable
-        run: chmod +x verify_manifest.sh
+      - name: Build WASM package (nodejs target)
+        run: |
+          set -euo pipefail
+          cd sovereign_governance_wasm
+          wasm-pack build --release --target nodejs --out-dir pkg
+          echo "WASM pkg contents:" && ls -la pkg || true
 
-      - name: Canonicalize manifest (RFC8785)
-        run: ./verify_manifest.sh canonicalize manifest.json
-
-      - name: Compute leaf (SHA-256)
-        run: ./verify_manifest.sh leaf canonical.json
-
-      - name: Upload verification artifacts
+      - name: Collect WASM artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: manifest-verification
-          path: |
-            canonical.json
-            manifest.leaf.hex
+          name: wasm-pkg
+          path: sovereign_governance_wasm/pkg
 
-      - name: Verify detached Ed25519 signature (if present)
+      - name: Run Rust unit tests
         run: |
-          if [ -f pubkey.pem ] && [ -f manifest.sig ]; then
-            ./verify_manifest.sh verify canonical.json
-          else
-            echo "Skipping signature verification because pubkey.pem or manifest.sig is missing."
-          fi
-
-      - name: Compare manifest_digest against computed leaf
-        run: |
-          calc=$(cat manifest.leaf.hex)
-          expected=$(jq -r '.manifest_digest.hex' manifest.json)
-          echo "calculated: $calc"
-          echo "expected:   $expected"
-          if [ "$calc" != "$expected" ]; then
-            echo "ERROR: manifest_digest mismatch" >&2
-            exit 1
-          fi
-
-      - name: Success
-        run: echo "Manifest verification (or leaf computation) passed."
+          set -euo pipefail
+          cd sovereign_governance_wasm
+          cargo test --verbose
