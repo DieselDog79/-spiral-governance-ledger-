@@ -35,21 +35,11 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install wasm-pack (pinned)
-        env:
-          VERSION: "0.15.0"
+      - name: Install wasm-pack (installer)
         run: |
           set -euo pipefail
-          echo "Installing wasm-pack v${VERSION}"
-          curl -fsSL "https://github.com/rustwasm/wasm-pack/releases/download/v${VERSION}/wasm-pack-v${VERSION}-x86_64-unknown-linux-gnu.tar.gz" -o wasm-pack.tar.gz
-          tar xzf wasm-pack.tar.gz
-          if sudo -n true 2>/dev/null; then
-            sudo mv wasm-pack /usr/local/bin/wasm-pack
-          else
-            mkdir -p "$HOME/.local/bin"
-            mv wasm-pack "$HOME/.local/bin/"
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
-          fi
+          echo "Installing wasm-pack via the official installer script"
+          curl -fsSL https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
           wasm-pack --version
 
       - name: Build WASM package (nodejs target)
