@@ -41,13 +41,16 @@ case "$cmd" in
 import sys, json
 try:
     import rfc8785
-except Exception as e:
+except Exception:
     sys.exit("Missing Python dependency: pip install rfc8785")
 infile = sys.argv[1]
+# Load JSON
 with open(infile, 'rb') as f:
     obj = json.load(f)
-with open('canonical.json','wb') as out:
-    out.write(rfc8785.encode(obj))
+# Use rfc8785.dumps to get canonical bytes
+canonical_bytes = rfc8785.dumps(obj)
+with open('canonical.json', 'wb') as out:
+    out.write(canonical_bytes)
 PY
     echo "Canonical bytes written to canonical.json"
     exit 0
