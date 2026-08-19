@@ -92,3 +92,6 @@ jobs:
           fi
           cargo test --verbose
 
+CARGO_DIR=$(find . -name "Cargo.toml" -type f -print -quit | xargs dirname)
+
+
