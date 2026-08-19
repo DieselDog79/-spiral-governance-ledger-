@@ -34,3 +34,4 @@ git add .github/workflows/wasm-ci.yml
 git commit -m "CI: fix working directory path resolution for Cargo.toml and src directories"
 git push origin update-actions-node24
 
+.github/workflows/wasm-ci.yml
