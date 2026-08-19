@@ -1,0 +1,23 @@
+      - name: Install and Verify wasm-pack
+        run: |
+          set -euo pipefail
+          echo "Checking for existing wasm-pack..."
+          if command -v wasm-pack >/dev/null 2>&1; then
+            wasm-pack --version
+          else
+            echo "Installing wasm-pack v0.15.0..."
+            cargo install wasm-pack --locked --version 0.15.0
+            export PATH="$HOME/.cargo/bin:$PATH"
+            wasm-pack --version
+          fi
+
+      - name: Build WASM Package (NodeJS Target)
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.cargo/bin:$PATH"
+          if [ -d "sovereign_governance_wasm" ]; then
+            cd sovereign_governance_wasm
+          fi
+          echo "Executing wasm-pack build..."
+          wasm-pack build --release --target nodejs --out-dir pkg
+          ls -la pkg
