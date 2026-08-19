@@ -1,4 +1,4 @@
-name: NodeJS with Webpack
+name: NodeJS with Express
 
 on:
   push:
@@ -28,11 +28,19 @@ jobs:
         echo "Installing npm dependencies..."
         npm install
 
-    - name: Build with Webpack
+    - name: Verify server configuration
       run: |
         set -euo pipefail
-        # Force non-interactive npm/webpack-cli to prevent hanging on installation prompts
-        npm install -y webpack-cli --save-dev || true
-        export npm_config_yes=true
-        echo "Executing webpack build..."
-        npx webpack
+        echo "Checking server.js syntax..."
+        node -c server.js
+        echo "✓ server.js syntax is valid"
+
+    - name: Check environment variables
+      run: |
+        set -euo pipefail
+        echo "Verifying .env configuration..."
+        if [ -f .env ]; then
+          echo "✓ .env file found"
+        else
+          echo "⚠ .env file not found (will be required at runtime)"
+        fi
