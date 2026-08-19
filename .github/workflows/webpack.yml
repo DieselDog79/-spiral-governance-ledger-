@@ -1,25 +1,57 @@
-      - name: Install and Verify wasm-pack
-        run: |
-          set -euo pipefail
-          WASM_PACK_VERSION="0.15.0"
-          
-          if command -v wasm-pack >/dev/null 2>&1; then
-            echo "wasm-pack already installed:"
-            wasm-pack --version
-          else
-            echo "Installing wasm-pack v${WASM_PACK_VERSION}..."
-            cargo install wasm-pack --locked --version "${WASM_PACK_VERSION}"
-          fi
-          
-          wasm-pack --version
+name: NodeJS with Webpack
 
-      - name: Build WASM Package (NodeJS Target)
-        working-directory: ./sovereign_governance_wasm
-        run: |
-          set -euo pipefail
-          # Force non-interactive npm/wasm-pack actions to prevent hanging on webpack-cli prompts
-          npm install -y webpack-cli --save-dev || true
-          export npm_config_yes=true
-          echo "Executing wasm-pack build..."
-          CI=true wasm-pack build --release --target nodejs --out-dir pkg
-          echo "WASM pkg contents:" && ls -la pkg || true
+on:
+  push:
+    branches: [ "spiral-governance-ledger" ]
+  pull_request:
+    branches: [ "spiral-governance-ledger" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install and Verify wasm-pack
+      run: |
+        set -euo pipefail
+        WASM_PACK_VERSION="0.15.0"
+        
+        if command -v wasm-pack >/dev/null 2>&1; then
+          echo "wasm-pack already installed:"
+          wasm-pack --version
+        else
+          echo "Installing wasm-pack v${WASM_PACK_VERSION}..."
+          cargo install wasm-pack --locked --version "${WASM_PACK_VERSION}"
+        fi
+        
+        wasm-pack --version
+
+    - name: Build WASM Package (NodeJS Target)
+      working-directory: ./sovereign_governance_wasm
+      run: |
+        set -euo pipefail
+        # Force non-interactive npm/wasm-pack actions to prevent hanging on webpack-cli prompts
+        npm install -y webpack-cli --save-dev || true
+        export npm_config_yes=true
+        echo "Executing wasm-pack build..."
+        CI=true wasm-pack build --release --target nodejs --out-dir pkg
+        echo "WASM pkg contents:" && ls -la pkg || true
+
+    - name: Build with Webpack
+      run: |
+        set -euo pipefail
+        npm install -y webpack-cli --save-dev || true
+        export npm_config_yes=true
+        echo "Executing webpack build..."
+        npx webpack
