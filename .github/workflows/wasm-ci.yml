@@ -1,0 +1,10 @@
+      - name: Build WASM package (nodejs target)
+        run: |
+          set -euo pipefail
+          if [ -d "sovereign_governance_wasm" ]; then
+            cd sovereign_governance_wasm
+          fi
+          # Force non-interactive npm/wasm-pack actions to prevent hanging on webpack-cli prompts
+          export npm_config_yes=true
+          CI=true wasm-pack build --release --target nodejs --out-dir pkg
+          echo "WASM pkg contents:" && ls -la pkg || true
