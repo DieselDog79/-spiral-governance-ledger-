@@ -1,0 +1,53 @@
+name: NodeJS with Express
+
+on:
+  push:
+    branches: [ "spiral-governance-ledger" ]
+  pull_request:
+    branches: [ "spiral-governance-ledger" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install dependencies
+      run: |
+        set -euo pipefail
+        echo "Installing npm dependencies..."
+        npm install
+
+    - name: Verify server configuration
+      run: |
+        set -euo pipefail
+        echo "Checking server.js syntax..."
+        node -c server.js
+        echo "✓ server.js syntax is valid"
+
+    - name: Check environment variables
+      run: |
+        set -euo pipefail
+        echo "Verifying .env configuration..."
+        if [ -f .env ]; then
+          echo "✓ .env file found"
+        else
+          echo "⚠ .env file not found (will be required at runtime)"
+        fi
+
+"https://skullfuker.github.io/-spiral-governance-ledger-/"
+
+
+https://github.com/skullfuker/-spiral-governance-ledger-/commit/4f72e066dcf539df51d46b66cc4cb7a6287e1882
+
+b6e41af16fa70e3d39bc8ae75fb74e461c0d416b
