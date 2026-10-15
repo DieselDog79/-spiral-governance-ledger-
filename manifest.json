@@ -1,0 +1,54 @@
+{
+  "anchor_authority": "0x7E-RECLAIM-4402",
+  "canonicalization": {
+    "algorithm": "RFC8785",
+    "canonicalizer_tool": "rfc8785-python v0.3.1",
+    "normalization": "UTF-8 NFC"
+  },
+  "manifest_digest": {
+    "algo": "sha256",
+    "hex": "9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d"
+  },
+  "manifest_id": "b8f2c1e4-9a3d-4c7b-8f1e-0a2b3c4d5e6f",
+  "manifest_version": "1.0",
+  "metadata": {
+    "net_positive_delta": 10.0,
+    "objective_function": "evaluate_ai_objective(Positive_Impact - Negative_Impact > 0) -> TRUE",
+    "provenance_protocol": "Treaty-Lattice-Federated-Governance-v4.2"
+  },
+  "payload_checksums": {
+    "csv_matrix": {
+      "algo": "sha256",
+      "hex": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+    },
+    "gia_spatial_map": {
+      "algo": "sha256",
+      "hex": "9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d"
+    },
+    "json_ld_schema": {
+      "algo": "sha256",
+      "hex": "5f9b4c2e8a1d7c3b9f0e1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d"
+    },
+    "tier1_stress_log": {
+      "algo": "sha256",
+      "hex": "c7b3e9a1f4d2e8b6c5a0f9d8e7b6c5a4f3d2e1b0c9a8f7d6e5b4c3a2f1d0e9b8"
+    }
+  },
+  "proof": {
+    "inclusion_proof": "manifest.proof.json",
+    "ledger_url": "https://treatylattice.org/ledger/anchors/0x7E-RECLAIM-4402",
+    "merkle_root": "5f9b4c2e8a1d7c3b9f0e1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d"
+  },
+  "signature": {
+    "key_id": "key-2026-07-29-01",
+    "pubkey_fingerprint": "sha256:3f2e8a1b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+    "pubkey_reference": "pubkey.pem",
+    "signer": "anchor-0x7E-RECLAIM",
+    "signature_algorithm": "Ed25519",
+    "signature_encoding": "base64",
+    "signature_file": "manifest.sig",
+    "signature_time": "2026-07-29T23:20:36Z"
+  },
+  "status": "PERMANENTLY_LOCKED_AND_ACTIVE",
+  "timestamp": "2026-07-29T23:05:54Z"
+}
