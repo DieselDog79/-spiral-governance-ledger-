@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
       WORM_VAULT_URI: ${{ secrets.WORM_VAULT_URI || 's3://sovereign-lattice-worm-vault' }}
       DEBUG_BOTOCORE: '1'
     steps:
@@ -52,7 +52,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Print environment and workspace debug info
         run: |
@@ -75,8 +75,8 @@ jobs:
       - name: Run ledger script (strict + unbuffered)
         env:
           # enable boto/botocore debug logging in the Python script when present
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          WORM_VAULT_URI: ${{ secrets.WORM_VAULT_URI || 's3://sovereign-lattice-worm-vault' }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          WORM_VAULT_URI: ${{ env.WORM_VAULT_URI }}
         run: |
           set -xuo pipefail
           SCRIPT_PATH="./ledger.py"
