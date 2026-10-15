@@ -54,6 +54,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Verify AWS credentials
+        run: |
+          set -euo pipefail
+          aws sts get-caller-identity --output json
+
       - name: Print environment and workspace debug info
         run: |
           set -euo pipefail
