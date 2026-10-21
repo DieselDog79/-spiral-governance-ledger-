@@ -9,7 +9,11 @@ services:
     branch: spiral-governance-ledger
     autoDeploy: true
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: TREATY_PHASE_ACTIVE
         value: "377.0"
       - key: SCROLL_REGISTRY_SECRET
         value: "your-secret-here"
+      - key: WEBHOOK_URL
+        value: "https://your-live-endpoint.example.com/webhook"
