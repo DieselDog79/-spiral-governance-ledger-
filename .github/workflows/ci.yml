@@ -2,23 +2,28 @@ name: CI — Ledger run & S3 anchor
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   run-ledger:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
-      WORM_VAULT_URI: ${{ secrets.WORM_VAULT_URI || 's3://sovereign-lattice-worm-vault' }}
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+      WORM_VAULT_URI: ${{ vars.WORM_VAULT_URI || 's3://sovereign-lattice-worm-vault' }}
       DEBUG_BOTOCORE: '1'
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -36,7 +41,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libzstd-dev python3-dev
 
-      - name: Install dependencies (from requirements.txt)
+      - name: Install dependencies
         run: |
           set -euo pipefail
           if [ ! -f requirements.txt ]; then
@@ -44,17 +49,23 @@ jobs:
             exit 5
           fi
           python -m pip install --upgrade pip setuptools wheel
-          # prefer prebuilt wheels to avoid building C extensions from source
           pip install --prefer-binary -r requirements.txt
 
-      - name: Configure AWS credentials (access keys)
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Configure AWS credentials (OIDC)
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Skip AWS configuration
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME == '' }}
+        run: |
+          echo "AWS_ROLE_TO_ASSUME is not configured; skipping AWS-authenticated steps."
+          echo "This is expected for non-AWS CI runs."
+
       - name: Verify AWS credentials
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' }}
         run: |
           set -euo pipefail
           aws sts get-caller-identity --output json
@@ -68,29 +79,31 @@ jobs:
           pip list --format=columns
           echo "Listing repository root:"
           ls -la
-          echo "Listing current dir tree (top-level):"
-          for d in ./*; do echo ">>> $d"; ls -la "$d" || true; done
-          echo "Checking for script file(s):"
-          ls -la ./ || true
           echo "AWS identity (sts):"
-          aws sts get-caller-identity --output json || true
+          if [ -n "${{ secrets.AWS_ROLE_TO_ASSUME }}" ]; then
+            aws sts get-caller-identity --output json || true
+          else
+            echo "AWS not configured; skipped"
+          fi
           echo "Quick check of target S3 bucket (may fail if no permissions):"
-          aws s3 ls ${WORM_VAULT_URI} || true
+          if [ -n "${{ secrets.AWS_ROLE_TO_ASSUME }}" ]; then
+            aws s3 ls "${WORM_VAULT_URI}" || true
+          else
+            echo "AWS not configured; skipped"
+          fi
 
       - name: Run ledger script (strict + unbuffered)
         env:
-          # enable boto/botocore debug logging in the Python script when present
           AWS_REGION: ${{ env.AWS_REGION }}
           WORM_VAULT_URI: ${{ env.WORM_VAULT_URI }}
         run: |
-          set -xuo pipefail
+          set -euxo pipefail
           SCRIPT_PATH="./ledger.py"
           if [ ! -f "$SCRIPT_PATH" ]; then
             echo "Error: ledger script not found at $SCRIPT_PATH"
             ls -la
             exit 4
           fi
-          # Enable verbose botocore logs if DEBUG_BOTOCORE is set in the job env
           if [ "${DEBUG_BOTOCORE:-}" = '1' ]; then
             export BOTOCORE_LOG_LEVEL=DEBUG
           fi
@@ -104,6 +117,14 @@ jobs:
           echo "=== PYTHON DEPENDENCIES ==="
           pip list --format=columns || true
           echo "=== AWS STS ==="
-          aws sts get-caller-identity || true
+          if [ -n "${{ secrets.AWS_ROLE_TO_ASSUME }}" ]; then
+            aws sts get-caller-identity || true
+          else
+            echo "AWS not configured; skipped"
+          fi
           echo "=== Sample S3 bucket head attempt ==="
-          aws s3 ls ${WORM_VAULT_URI} || true
+          if [ -n "${{ secrets.AWS_ROLE_TO_ASSUME }}" ]; then
+            aws s3 ls "${WORM_VAULT_URI}" || true
+          else
+            echo "AWS not configured; skipped"
+          fi
